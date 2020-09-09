@@ -95,7 +95,8 @@
     </Compile>
     <Compile Include="Book.cs" />
     <Compile Include="BooksService.cs" />
-    <Compile Include="DatabaseService.cs" />
+    <Compile Include="DatabaseConnector.cs" />
+    <Compile Include="MariaDB.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

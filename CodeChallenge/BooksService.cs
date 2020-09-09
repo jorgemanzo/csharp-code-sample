@@ -1,162 +1,36 @@
-﻿using MySqlConnector;
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Windows;
 
 namespace CodeChallenge
 {
 
-    /// <summary>
-    /// This class is responsible for processing user data and storing it.
-    /// This class behaves "like" a singleton in that there is one instance
-    /// of this type that is accessible behind static methods.
-    /// 
-    /// This is so the code-behind of a view can access and use this class'
-    /// functionality without having to make an instance and be responsible for it.
-    /// In order to interact with this class, a code-behind should rely on the static
-    /// methods defined at the bottom.
-    /// 
-    /// For storing the data, this class can either "mock" storing the data in
-    /// a collection locally, and will mimick a database. However changes made will
-    /// not persist, and IDs will not to be unique.
-    /// 
-    /// An optional function this class provides is to use a MySQL database. When
-    /// enabled, the class will instead connect to a remote MySQL database and
-    /// create / read / update / delete from that database.
-    /// </summary>
     class BooksService
     {
 
-        /// <summary>
-        /// In order to enable database functionality, change the bellow constant
-        /// "USE_DB" to true, and then update the constant "CONNECTION_STRING"
-        /// with the data as it applies to your database.
-        /// </summary>
-        private readonly bool USE_DB = false;
-        private readonly string CONNECTION_STRING = "server=0.0.0.0;user=USER;password=PASSWORD;database=DB";
-
         private ObservableCollection<Book> inventory;
-        private MySqlConnection mariaDB;
         private static BooksService instance = null;
+        private DatabaseConnector db = null;
 
-        private BooksService()
+        //
+        // Instance methods
+        //
+
+        private BooksService(DatabaseConnector connector)
         {
             
-            if (USE_DB)
+            if (connector != null)
             {
-                mariaDB = new MySqlConnection(CONNECTION_STRING);
-                inventory = selectAllFromBooks();
+                this.db = connector;
+                inventory = this.db.selectAllFromBooks();
             }
             else
             {
-                inventory = mockInventory();
+                inventory = localInventory();
             }
         }
 
-        private ObservableCollection<Book> selectAllFromBooks()
-        {
-
-            ObservableCollection<Book> queryResult = new ObservableCollection<Book>();
-
-            try
-            {
-                mariaDB.Open();
-
-                MySqlCommand cmd = new MySqlCommand("SELECT * FROM books;", mariaDB);
-                MySqlDataReader rdr = cmd.ExecuteReader();
-
-                while (rdr.Read())
-                {
-                    queryResult.Add(new Book()
-                    {
-                        Id          = (int)rdr[0],
-                        Author      = (string)rdr[1],
-                        Title       = (string)rdr[2],
-                        PageCount   = (int)rdr[3]
-                    });
-                }
-                rdr.Close();
-            }
-            catch (MySqlException e)
-            {
-
-                MessageBox.Show(e.Message);
-            }
-            mariaDB.Close();
-
-            return queryResult;
-        }
-
-        private bool deleteByBook(Book toDelete)
-        {
-            try
-            {
-                mariaDB.Open();
-
-                MySqlCommand cmd = new MySqlCommand("DELETE FROM books WHERE book_id = @book_id;", mariaDB);
-                cmd.Parameters.AddWithValue("@book_id", toDelete.Id);
-                MySqlDataReader rdr = cmd.ExecuteReader();
-
-                rdr.Close();
-            }
-            catch (MySqlException e)
-            {
-                MessageBox.Show(e.Message);
-                return false;
-            }
-            mariaDB.Close();
-            return true;
-        }
-
-        private bool insertNewBook(string author, int pageCount, string title)
-        {
-            try
-            {
-                mariaDB.Open();
-
-                MySqlCommand cmd = new MySqlCommand("INSERT INTO books (author, title, page_count) VALUES (@author, @title, @page_count);", mariaDB);
-                cmd.Parameters.AddWithValue("@author", author);
-                cmd.Parameters.AddWithValue("@title", title);
-                cmd.Parameters.AddWithValue("@page_count", pageCount);
-                MySqlDataReader rdr = cmd.ExecuteReader();
-
-                rdr.Close();
-            }
-            catch (MySqlException e)
-            {
-                MessageBox.Show(e.Message);
-                throw;
-            }
-            mariaDB.Close();
-            return true;
-        }
-
-        private bool updateBookById(string author, int id, int pageCount, string title)
-        {
-            try
-            {
-                mariaDB.Open();
-
-                MySqlCommand cmd = new MySqlCommand("UPDATE books SET author = @author, title = @title, page_count = @page_count WHERE book_id = @book_id;", mariaDB);
-                cmd.Parameters.AddWithValue("@author", author);
-                cmd.Parameters.AddWithValue("@book_id", id);
-                cmd.Parameters.AddWithValue("@title", title);
-                cmd.Parameters.AddWithValue("@page_count", pageCount);
-                MySqlDataReader rdr = cmd.ExecuteReader();
-
-                rdr.Close();
-            }
-            catch (MySqlException e)
-            {
-                MessageBox.Show(e.Message);
-                throw;
-            }
-            mariaDB.Close();
-            return true;
-        }
-
-        private ObservableCollection<Book> mockInventory()
+        private ObservableCollection<Book> localInventory()
         {
             ObservableCollection<Book> queryResult = new ObservableCollection<Book>();
             queryResult.Add(new Book()
@@ -176,9 +50,9 @@ namespace CodeChallenge
             return queryResult;
         }
 
-        private bool mockRemoveBook(Book toRemove)
+        private bool localRemoveBook(Book toRemove)
         {
-            if (Instance.inventory.Remove(toRemove))
+            if (Singleton.inventory.Remove(toRemove))
             {
                 System.Console.WriteLine("Removed");
                 return true;
@@ -190,7 +64,7 @@ namespace CodeChallenge
             }
         }
 
-        private bool mockAddNewBook(string author, int id, int pageCount, string title)
+        private bool localAddNewBook(string author, int id, int pageCount, string title)
         {
             Book newBook = new Book()
             {
@@ -200,22 +74,26 @@ namespace CodeChallenge
             };
             // Keep the old ID if provided (such as during an update), or 
             // assign the new book a new ID (may not be unique).
-            newBook.Id = id == 0 ? Instance.inventory.Count + 1 : id;
-            Instance.inventory.Add(newBook);
+            newBook.Id = id == 0 ? Singleton.inventory.Count + 1 : id;
+            Singleton.inventory.Add(newBook);
             return true;
         }
 
-        private static BooksService Instance
+        private static BooksService Singleton
         {
             get
             {
                 if (instance == null)
                 {
-                    instance = new BooksService();
+                    instance = new BooksService(null);
                 }
                 return instance;
             }
         }
+
+        //
+        // Static methods
+        //
 
         private static bool validateInput(string author, int pageCount, string title)
         {
@@ -229,7 +107,7 @@ namespace CodeChallenge
         /// </summary>
         public static ObservableCollection<Book> getBookInventory()
         {
-            return Instance.inventory;
+            return Singleton.inventory;
         }
 
 
@@ -239,9 +117,9 @@ namespace CodeChallenge
         /// </summary>
         public static ObservableCollection<Book> refreshInventory()
         {
-            if (Instance.USE_DB)
+            if (Singleton.db != null)
             {
-                Instance.inventory = Instance.selectAllFromBooks();
+                Singleton.inventory = Singleton.db.selectAllFromBooks();
             }
             return getBookInventory();
         }
@@ -255,17 +133,17 @@ namespace CodeChallenge
         /// </summary>
         public static bool removeBook(Book toRemove)
         {
-            if(Instance.USE_DB)
+            if(Singleton.db != null)
             {
-                if(Instance.inventory.Contains(toRemove))
+                if(Singleton.inventory.Contains(toRemove))
                 {
-                    return Instance.deleteByBook(toRemove);
+                    return Singleton.db.deleteByBook(toRemove);
                 }
                 return false;
             }
             else
             {
-                return Instance.mockRemoveBook(toRemove);
+                return Singleton.localRemoveBook(toRemove);
             }
         }
 
@@ -285,13 +163,13 @@ namespace CodeChallenge
         {
             if (validateInput(author, pageCount, title))
             {
-                if(Instance.USE_DB)
+                if(Singleton.db != null)
                 {
-                    return Instance.insertNewBook(author, pageCount, title);
+                    return Singleton.db.insertNewBook(author, pageCount, title);
                 }
                 else
                 {
-                    return Instance.mockAddNewBook(author, id, pageCount, title);
+                    return Singleton.localAddNewBook(author, id, pageCount, title);
                 }
             }
             return false;
@@ -308,9 +186,9 @@ namespace CodeChallenge
         {
             if(validateInput(author, pageCount, title))
             {
-                if (Instance.USE_DB)
+                if (Singleton.db != null)
                 {
-                    return Instance.updateBookById(author, id, pageCount, title);
+                    return Singleton.db.updateBookById(author, id, pageCount, title);
                 }
                 else if (removeBook(toReplace))
                 {
@@ -331,7 +209,7 @@ namespace CodeChallenge
                 ObservableCollection<Book> result = new ObservableCollection<Book>();
                 title = title.ToLower();
                 var booksQuery =
-                    from book in Instance.inventory.ToList<Book>()
+                    from book in Singleton.inventory.ToList<Book>()
                     where book.Title.ToLower().Contains(title)
                     || book.Title.ToLower().StartsWith(title)
                     || book.Title.ToLower().EndsWith(title)
