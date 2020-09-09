@@ -5,7 +5,7 @@ using System.Linq;
 namespace CodeChallenge
 {
 
-    class BooksService
+    public class BooksService
     {
 
         private ObservableCollection<Book> inventory;
@@ -26,28 +26,8 @@ namespace CodeChallenge
             }
             else
             {
-                inventory = localInventory();
+                inventory = new ObservableCollection<Book>();
             }
-        }
-
-        private ObservableCollection<Book> localInventory()
-        {
-            ObservableCollection<Book> queryResult = new ObservableCollection<Book>();
-            queryResult.Add(new Book()
-            {
-                Title = "The C Programming Language",
-                Author = "Brian Kernighan",
-                PageCount = 276,
-                Id = 1
-            });
-            queryResult.Add(new Book()
-            {
-                Title = "The Rust Programming Language",
-                Author = "Steve Klabnik",
-                PageCount = 276,
-                Id = 2
-            });
-            return queryResult;
         }
 
         private bool localRemoveBook(Book toRemove)
@@ -97,7 +77,7 @@ namespace CodeChallenge
 
         private static bool validateInput(string author, int pageCount, string title)
         {
-            return !String.IsNullOrWhiteSpace(title) && !String.IsNullOrWhiteSpace(author) && pageCount > 0;
+            return !String.IsNullOrWhiteSpace(title) && !String.IsNullOrEmpty(title) && !String.IsNullOrWhiteSpace(author) && !String.IsNullOrEmpty(author) && pageCount > 0;
         }
 
         /// <summary>
