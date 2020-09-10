@@ -127,6 +127,20 @@ namespace CodeChallenge
             }
         }
 
+        /// <summary>
+        /// removeAllBooks() will remove all local books. This method has no effect if
+        /// connected to a database. Returns true if sucessful.
+        /// </summary>
+        public static bool removeAllBooks()
+        {
+            if(Singleton.db == null)
+            {
+                Singleton.inventory = new ObservableCollection<Book>();
+                return true;
+            }
+            return false;
+        }
+
 
         /// <summary>
         /// A code-behind should use this method of adding a new book, as
