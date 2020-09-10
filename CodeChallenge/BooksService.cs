@@ -16,6 +16,12 @@ namespace CodeChallenge
         // Instance methods
         //
 
+        /// <summary>
+        /// BooksService optionally accepts a DatabaseConnector to back it's data store.
+        /// If passed null, it will stub a local data store backed by a simple list, however,
+        /// IDs of books will not be unique.
+        /// </summary>
+        /// <param name="connector"></param>
         private BooksService(DatabaseConnector connector)
         {
             
