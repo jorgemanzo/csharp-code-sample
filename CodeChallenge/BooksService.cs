@@ -176,17 +176,17 @@ namespace CodeChallenge
         /// to emulate what would be a database for inventory.
         /// TODO: Add input checking similar to that of addNewBook()
         /// </summary>
-        public static bool updateBook(Book toReplace, string author, int id, int pageCount, string title)
+        public static bool updateBook(Book toReplace, string author, int pageCount, string title)
         {
             if(validateInput(author, pageCount, title))
             {
                 if (Singleton.db != null)
                 {
-                    return Singleton.db.updateBookById(author, id, pageCount, title);
+                    return Singleton.db.updateBookById(author, toReplace.Id, pageCount, title);
                 }
                 else if (removeBook(toReplace))
                 {
-                    return addNewBook(author, id, pageCount, title);
+                    return addNewBook(author, toReplace.Id, pageCount, title);
                 }
             }
             return false;
