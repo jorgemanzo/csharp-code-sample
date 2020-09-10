@@ -1,7 +1,6 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using CodeChallenge;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 
 namespace CodeChallengeTests
@@ -20,7 +19,7 @@ namespace CodeChallengeTests
         [DataRow(null, -1, null, false)]
         [DataRow("Brian Kernighan", 272, "The C Programming Language", true)]
         [DataRow("Gamma, Helm, Johnson, Vlissides", -1, "Design Patterns", false)]
-        public void addNewBookChangesReturnsSuccessful(string author, int pageCount, string title, bool expectInserted)
+        public void addNewBookReturnsSuccessful(string author, int pageCount, string title, bool expectInserted)
         {
             bool inserted = BooksService.addNewBook(author, pageCount, title);
 
@@ -29,10 +28,29 @@ namespace CodeChallengeTests
             this.cleanuUp();
         }
 
+        [DataTestMethod]
+        [DataRow("Brian Kernighan", 272, "The C Programming Language", true)]
+        public void removeBookReturnsSuccessful(
+            string author, int pageCount, string title,
+            bool expectRemove)
+        {
+            BooksService.addNewBook(author, pageCount, title);
+            Book insertedBook = BooksService.getBooksByTitle(title)[0];
+
+
+            bool removed = BooksService.removeBook(insertedBook);
+
+            Assert.AreEqual(expectRemove, removed);
+
+            this.cleanuUp();
+
+        }
 
         [DataTestMethod]
         [DataRow("Brian Kernighan", 272, "The C Programming Language",
                  "Jorge Manzo", 4096, "The C Programming Language", true)]
+        [DataRow("John Levine", 271, "Flex & Bison",
+                 "", 0, "", false)]
         public void updateBookReturnsSucessful(
             string author, int pageCount, string title, 
             string updateAuthor, int updatePageCount, string updateTitle, 
