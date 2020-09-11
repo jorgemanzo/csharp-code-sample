@@ -8,37 +8,25 @@ namespace CodeChallenge
     public class BooksService
     {
 
-        private ObservableCollection<Book> inventory;
-        private static BooksService instance = null;
-        private DatabaseConnector db = null;
 
-        //
-        // Instance methods
-        //
+        private static DatabaseConnector db = null;
+        private static ObservableCollection<Book> inventory = new ObservableCollection<Book>();
 
         /// <summary>
-        /// BooksService optionally accepts a DatabaseConnector to back it's data store.
-        /// If passed null, it will stub a local data store backed by a simple list, however,
-        /// IDs of books will not be unique.
+        /// setDatabaseConnector will set this service class' database connector.
+        /// Upon calling the other API methods, those operations will instead use
+        /// the provided database connector.
         /// </summary>
-        /// <param name="connector"></param>
-        private BooksService(DatabaseConnector connector)
+        /// <param name="connector">The DatabaseConnector to be used statically for all service methods.</param>
+        private static void setDatabaseConnector(DatabaseConnector connector)
         {
-            
-            if (connector != null)
-            {
-                this.db = connector;
-                inventory = this.db.selectAllFromBooks();
-            }
-            else
-            {
-                inventory = new ObservableCollection<Book>();
-            }
+            db = connector;
+            inventory = db.selectAllFromBooks();
         }
 
-        private bool localRemoveBook(Book toRemove)
+        private static bool localRemoveBook(Book toRemove)
         {
-            if (Singleton.inventory.Remove(toRemove))
+            if (inventory.Remove(toRemove))
             {
                 System.Console.WriteLine("Removed");
                 return true;
@@ -50,7 +38,7 @@ namespace CodeChallenge
             }
         }
 
-        private bool localAddNewBook(string author, int id, int pageCount, string title)
+        private static bool localAddNewBook(string author, int id, int pageCount, string title)
         {
             Book newBook = new Book()
             {
@@ -60,26 +48,10 @@ namespace CodeChallenge
             };
             // Keep the old ID if provided (such as during an update), or 
             // assign the new book a new ID (may not be unique).
-            newBook.Id = id == 0 ? Singleton.inventory.Count + 1 : id;
-            Singleton.inventory.Add(newBook);
+            newBook.Id = id == 0 ? inventory.Count + 1 : id;
+            inventory.Add(newBook);
             return true;
         }
-
-        private static BooksService Singleton
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    instance = new BooksService(null);
-                }
-                return instance;
-            }
-        }
-
-        //
-        // Static methods
-        //
 
         private static bool validateInput(string author, int pageCount, string title)
         {
@@ -88,28 +60,17 @@ namespace CodeChallenge
 
         /// <summary>
         /// This class provides the locally stored inventory of books.
-        /// If there is no current instance of the singleton, one will
-        /// be created and will query the data store for records.
+        /// If the database connector is set, it will call selectAllFromBooks() on
+        /// that connector.
         /// </summary>
         public static ObservableCollection<Book> getBookInventory()
         {
-            return Singleton.inventory;
-        }
-
-
-        /// <summary>
-        /// This class queries the data store for all records, and replaces
-        /// the locally stored collection with the results.
-        /// </summary>
-        public static ObservableCollection<Book> refreshInventory()
-        {
-            if (Singleton.db != null)
+            if (db != null)
             {
-                Singleton.inventory = Singleton.db.selectAllFromBooks();
+                inventory = db.selectAllFromBooks();
             }
-            return getBookInventory();
+            return inventory;
         }
-
 
         /// <summary>
         /// This and the following methods provide create / update / delete
@@ -119,17 +80,17 @@ namespace CodeChallenge
         /// </summary>
         public static bool removeBook(Book toRemove)
         {
-            if(Singleton.db != null)
+            if(db != null)
             {
-                if(Singleton.inventory.Contains(toRemove))
+                if(inventory.Contains(toRemove))
                 {
-                    return Singleton.db.deleteByBook(toRemove);
+                    return db.deleteByBook(toRemove);
                 }
                 return false;
             }
             else
             {
-                return Singleton.localRemoveBook(toRemove);
+                return localRemoveBook(toRemove);
             }
         }
 
@@ -139,9 +100,9 @@ namespace CodeChallenge
         /// </summary>
         public static bool removeAllBooks()
         {
-            if(Singleton.db == null)
+            if(db == null)
             {
-                Singleton.inventory = new ObservableCollection<Book>();
+                inventory = new ObservableCollection<Book>();
                 return true;
             }
             return false;
@@ -163,13 +124,13 @@ namespace CodeChallenge
         {
             if (validateInput(author, pageCount, title))
             {
-                if(Singleton.db != null)
+                if(db != null)
                 {
-                    return Singleton.db.insertNewBook(author, pageCount, title);
+                    return db.insertNewBook(author, pageCount, title);
                 }
                 else
                 {
-                    return Singleton.localAddNewBook(author, id, pageCount, title);
+                    return localAddNewBook(author, id, pageCount, title);
                 }
             }
             return false;
@@ -186,9 +147,9 @@ namespace CodeChallenge
         {
             if(validateInput(author, pageCount, title))
             {
-                if (Singleton.db != null)
+                if (db != null)
                 {
-                    return Singleton.db.updateBookById(author, toReplace.Id, pageCount, title);
+                    return db.updateBookById(author, toReplace.Id, pageCount, title);
                 }
                 else if (removeBook(toReplace))
                 {
@@ -209,7 +170,7 @@ namespace CodeChallenge
                 ObservableCollection<Book> result = new ObservableCollection<Book>();
                 title = title.ToLower();
                 var booksQuery =
-                    from book in Singleton.inventory.ToList<Book>()
+                    from book in inventory.ToList<Book>()
                     where book.Title.ToLower().Contains(title)
                     || book.Title.ToLower().StartsWith(title)
                     || book.Title.ToLower().EndsWith(title)

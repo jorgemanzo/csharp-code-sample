@@ -151,14 +151,14 @@ namespace CodeChallenge
         private void RemoveClick(object sender, RoutedEventArgs e)
         {
             BooksService.removeBook(SelectedBook);
-            Books = BooksService.refreshInventory();
+            Books = BooksService.getBookInventory();
             IsDeleteEnabled = isUpdateEnabled = false;
         }
 
         private void AddClick(object sender, RoutedEventArgs e)
         {
             BooksService.addNewBook(NewBookAuthor, NewBookPageCount, NewBookTitle);
-            Books = BooksService.refreshInventory();
+            Books = BooksService.getBookInventory();
             IsDeleteEnabled = isUpdateEnabled = SelectedBook != null;
         }
 
@@ -187,7 +187,7 @@ namespace CodeChallenge
             if(SelectedBook != null)
             {
                 bool successfulUpdate = BooksService.updateBook(SelectedBook, UpdateBookAuthor, UpdateBookPageCount, UpdateBookTitle);
-                Books = BooksService.refreshInventory();
+                Books = BooksService.getBookInventory();
                 IsDeleteEnabled = isUpdateEnabled = !successfulUpdate;
             }
         }
