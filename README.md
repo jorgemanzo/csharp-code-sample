@@ -6,7 +6,7 @@ Project uses the following third party packages:
 
 This is a simple book store inventory that has a simple data store: a simple list, or can be connected to a MySQL database. The structure of the app is seperated as follows:
 - A XAML front-end with a simple dependency property based code-behind.
-- `BookService` is a class that behaves like a singleton, providing access to the data store. This is done to relieve the code-behind from needing to keep an instance of a book store, thus simplifying it. This class is not threadsafe however, as the singleton is not impelemented to be thread safe, but merely convinient.
+- `BookService` is a class that provides access to the data store. This class purposefully uses static methods to relieve the code-behind from needing to keep an instance of a book store, thus simplifying it. This class is not threadsafe however.
 - `MariaDB` is a concrete impelementation of a `DatabaseConnector`. It implements the methods for opening the database connection and what queries to execute.
 
 To use a database instead of a mocked data store:
