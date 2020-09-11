@@ -5,7 +5,7 @@ using System.Linq;
 namespace CodeChallenge
 {
 
-    public class BooksService
+    public static class BooksService
     {
 
 
